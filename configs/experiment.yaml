@@ -1,0 +1,66 @@
+# Pipeline configuration. Everything that affects preprocessing is hashed into the
+# provenance trail (see src/config.py: preprocessing_hash).
+paths:
+  data_root: ./raw                          # read-only source data (never committed)
+  workspace: ./student_workspace            # derived data (git-ignored)
+  results: ./results
+
+seed: 42
+
+decode:                 # Room A (Experiment-2 PCAP) Nexmon BCM4366c0 80 MHz
+  n_subcarriers: 256
+  nman: 12
+  nexp: 6
+  nbits: 10
+  autoscale: true       # per-packet common exponent (as in Nexmon's public unpack_float docs)
+  fftshift: false       # raw Nexmon order already has DC (null) at index ~128, same as Room B CSVs
+  # 'all'            : keep every packet with non-zero CSI (needed to reach 150 observations/capture:
+  #                    captures hold ~215 packets, only ~108 are full-band)
+  # 'full_band_only' : drop packets whose Nexmon seq field is 0xFFFF (narrow-band frames whose energy is
+  #                    confined to ~64 central subcarriers). Captures then hold <150 observations, so
+  #                    lower window.length if you use this for analysis.
+  stream_policy: all
+
+qc:
+  drop_nonfinite: true
+  drop_all_zero: true
+  max_zero_fraction: 0.5        # drop rows where >50% of subcarriers are exactly 0
+  drop_consecutive_duplicates: true
+
+split:
+  room_b_val_per_class: 25      # spec value. Seed 42, per class, over sorted filenames
+  room_b_seed: 42
+
+window:
+  length: 150
+  stride_dev: 75        # overlapping windows allowed inside development captures
+  stride_val: 150       # non-overlapping, deterministic, starts at observation 0
+
+normalization:
+  log1p: true
+  std_floor: 0.05       # floor on per-subcarrier std (log units) to avoid blow-up on null subcarriers
+
+ssl:
+  feat_dim: 512
+  proj_dim: 128
+  epochs: 30
+  batch_size: 128
+  lr: 0.001
+  weight_decay: 0.0001
+  temperature: 0.2
+  crop_min_frac: 0.6
+  subcarrier_dropout: 0.15
+  noise_std: 0.05
+  gain_std: 0.3
+  subcarrier_shift_std: 0.1
+  max_time_mask: 20
+
+fingerprint:
+  window_lengths: [10, 25, 50, 100, 150]
+
+adapt:
+  K: [1, 5, 10, 20]
+  n_draws: 5            # independent support-set draws per K (mean +/- std reported)
+  head: logreg          # logreg | proto
+  C: 1.0
+  default_K: 20         # support size baked into the default heads used by run_episode.py
