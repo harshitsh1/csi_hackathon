@@ -34,7 +34,7 @@ Outputs in `results/`: `results.csv` (`experiment,target_room,K,metric,value,met
 Provenance: every window row in `windows/index.csv` stores capture id, start offset, stride and `preproc_hash`
 (hash of the decode/qc/split/window/normalization config).
 
-## What we found in the real data (please keep in the report)
+## What we found in the real data 
 1. **Room-A PCAPs hold two interleaved frame types.** Frames are 1084 B (18 B Nexmon header + 256 x uint32). Every second
    packet has Nexmon seq `0xFFFF`; its energy is confined to the ~64 central subcarriers (rest ~3-9), while the other
    half shows a smooth 80 MHz response resembling Room B. Captures hold only ~108 full-band packets, so a
@@ -49,7 +49,7 @@ Provenance: every window row in `windows/index.csv` stores capture id, start off
 4. **QC.** On the 6 provided PCAPs and 5 CSVs, no non-finite/all-zero/duplicate rows were found. All counts are logged
    per capture in `manifest.csv`.
 
-## Design decisions & assumptions (confirm with the teaching team where marked)
+## Design decisions & assumptions 
 * **Room-B validation split** (*assumption*): per class, `sorted(filenames)` then `random.Random(42).sample(names, 25)`.
   The PDF does not fix the exact sampler; if the TAs use another (e.g. numpy), change `data_index.index_room_b`.
 * Windows: dev stride 75 (overlap inside a capture only), validation stride 150 (non-overlapping, start at 0). Captures
